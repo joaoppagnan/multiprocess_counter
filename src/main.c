@@ -62,8 +62,7 @@ int main(){
   fgets(num_str, tam_buffer, stdin);
   char* num_ptr = strtok(num_str, " ");
   while (num_ptr != NULL){
-    shared_num[index_mem] = atoi(num_ptr);
-    printf("coloquei o numero %d na posicao %d de memoria\n", atoi(num_ptr), index_mem++);
+    shared_num[index_mem++] = atoi(num_ptr);
     num_ptr = strtok(NULL, " ");
     num_count++;
   }
@@ -73,8 +72,7 @@ int main(){
 
   /* aqui, ele vai fazer um fork() para cada processo, porem, ele so ira realizar o fork() se a variavel que indica o numero de processos em paralelo for menor que o numero maximo de processos definido no comeco do codigo */
   for (int i = 0; i < num_count; i++){
-    if (process_count < N_MAX_PROCESS){ /* aqui ele checa o numero de processos em paralelo */
-      process_count++;
+    while (process_count < N_MAX_PROCESS){ /* aqui ele checa o numero de processos em paralelo */
       filho[i] = fork();
       if (filho[i] == 0){ /* cada filho vai acessar a sua pagina de memoria correspondente */
 	printf("eu estou no filho %d e estou testando o numero %d\n", i, shared_num[i]);
@@ -82,22 +80,19 @@ int main(){
 	printf("o filho %d atualizou a contagem para %d\n", i, (*shared_count_ptr));
 	exit(0);
       }
+      process_count++;
     }
-    else { /* se o programa ver que atingiu o maximo de processos em paralelo, ele espera algum terminar para criar outro */ 
-      printf("atingi quatro processo em paralelo, vou esperar um filho terminar para criar outro\n");
-      wait(NULL);
-      --process_count;
-    }
+    /* se o programa ver que atingiu o maximo de processos em paralelo, ele espera algum terminar para criar outro */ 
+    wait(NULL);
+    --process_count;
   }
 
   /* nessa parte, ja enviamos todos os numeros para serem checados, entao esperaremos todos os processos filhos terminarem de checar */
-  printf("todo os numeros foram enviados para teste, vou esperar todos os filhos terminarem\n");
   for (int i = 0; i < num_count; i++){
     waitpid(filho[i], NULL, 0);
   }
 
   /* terminado os processos filhos, nos exibimos o resultado final*/
-  printf("todos os filhos terminaram, vamos ver o resultado\n");
   printf("%d\n", (*shared_count_ptr));
   return 0;
 }
