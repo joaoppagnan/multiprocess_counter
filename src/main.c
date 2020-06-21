@@ -54,15 +54,15 @@ int main(){
   shared_count_ptr = (int*) mmap(NULL, sizeof(int), protection, visibility, 0, 0);
 
   /* memoria mapeada por paginas para o processo pai enviar os numeros para os filhos */
-  int *shared_num;
-  shared_num = (int*) mmap(NULL, sizeof(int*), protection, visibility, 0, 0);
+  unsigned int *shared_num;
+  shared_num = (unsigned int*) mmap(NULL, sizeof(unsigned int*), protection, visibility, 0, 0);
 
   /* instrucoes para receber uma string de entrada, dividir nos espacos e enviar cada numero para uma pagina da memoria compartilhada */
   char num_str[tam_buffer];
   fgets(num_str, tam_buffer, stdin);
   char* num_ptr = strtok(num_str, " ");
   while (num_ptr != NULL){
-    shared_num[index_mem++] = atoi(num_ptr);
+    shared_num[index_mem++] = (unsigned int) atoi(num_ptr);
     num_ptr = strtok(NULL, " ");
     num_count++;
   }
@@ -74,14 +74,11 @@ int main(){
   for (int i = 0; i < num_count; i++){
     filho[i] = fork();
     if (filho[i] == 0){ /* cada filho vai acessar a sua pagina de memoria correspondente */
-      /*printf("eu estou no filho %d e estou testando o numero %d\n", i, shared_num[i]);*/
       (*shared_count_ptr) += prime_check(shared_num[i]); /* atualiza a variavel de contagem com o resultado da expressao que checa se eh primo*/
-      /*printf("o filho %d atualizou a contagem para %d\n", i, (*shared_count_ptr));*/
       exit(0);
     }
     ++process_count;
     if (process_count >= N_MAX_PROCESS){/* aqui ele checa o numero de processos em paralelo */ 
-      /*printf("estou com quatro processos em paralelo, vou esperar algum terminar\n");*/
       wait(NULL); /* se o programa ver que atingiu o maximo de processos em paralelo, ele espera algum terminar para criar outro */
       --process_count;
     }
@@ -92,7 +89,7 @@ int main(){
     waitpid(filho[i], NULL, 0);
   }
 
-  /* terminado os processos filhos, nos exibimos o resultado final*/
+  /* terminados os processos filhos, nos exibimos o resultado final*/
   printf("%d\n", (*shared_count_ptr));
   return 0;
 }
