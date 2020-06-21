@@ -3,10 +3,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 const int tam_buffer=100;
 
-int prime_check(unsigned int num){
+unsigned int prime_check(unsigned int num){
   unsigned int primo = 0;
   if (num == 0){
     return primo;
@@ -30,16 +34,51 @@ int prime_check(unsigned int num){
 }
 
 int main(){
-  unsigned int num_teste = 0;
-  unsigned int contagem_primos = 0;
+  int num_count = 0;
+  int index_mem = 0; /* variavel para mapear as paginas da memoria compartilhada */
+  int process_count = 0; /* variavel para contar o numero de processos */
+
+  /* parametros da memoria compartilhada */
+  int protection = PROT_READ | PROT_WRITE;
+  int visibility = MAP_SHARED | MAP_ANON;
+
+  /* contagem compartilhada de quantos primos nos temos na string */
+  int *shared_count_ptr;
+  shared_count_ptr = (int*) mmap(NULL, sizeof(int), protection, visibility, 0, 0);
+
+  /* memoria mapeada para o processo pai enviar os numeros para os filhos */
+  int *shared_num;
+  shared_num = (int*) mmap(NULL, sizeof(int*), protection, visibility, 0, 0);
+
+  /* instrucoes para receber uma string de entrada, dividir nos espacos e enviar cada numero para uma pagina da memoria compartilhada */
   char num_str[tam_buffer];
   fgets(num_str, tam_buffer, stdin);
   char* num_ptr = strtok(num_str, " ");
   while (num_ptr != NULL){
-    num_teste = atoi(num_ptr);
-    contagem_primos += prime_check(num_teste);
+    shared_num[index_mem] = atoi(num_ptr);
+    printf("coloquei o numero %d na posicao %d de memoria\n", atoi(num_ptr), index_mem++);
     num_ptr = strtok(NULL, " ");
+    num_count++;
   }
-  printf("numero de primos na string: %d\n", contagem_primos);
+
+  pid_t filho[num_count];
+
+  for (int i = 0; i < num_count; i++){
+    filho[i] = fork();
+    if (filho[i] == 0){
+      printf("eu estou no filho %d e estou testando o numero %d\n", i, shared_num[i]);
+      (*shared_count_ptr) += prime_check(shared_num[i]);
+      printf("o filho %d atualizou a contagem para %d\n", i, (*shared_count_ptr));
+      exit(0);
+    }
+  }
+
+  printf("todo os numeros foram enviados para teste, vou esperar todos os filhos terminarem\n");
+  for (int i = 0; i < num_count; i++){
+    waitpid(filho[i], NULL, 0);
+  }
+
+  printf("todos os filhos terminaram, vamos ver o resultado\n");
+  printf("%d\n", (*shared_count_ptr));
   return 0;
 }
