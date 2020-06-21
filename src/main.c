@@ -72,19 +72,19 @@ int main(){
 
   /* aqui, ele vai fazer um fork() para cada processo, porem, ele so ira realizar o fork() se a variavel que indica o numero de processos em paralelo for menor que o numero maximo de processos definido no comeco do codigo */
   for (int i = 0; i < num_count; i++){
-    while (process_count < N_MAX_PROCESS){ /* aqui ele checa o numero de processos em paralelo */
-      filho[i] = fork();
-      if (filho[i] == 0){ /* cada filho vai acessar a sua pagina de memoria correspondente */
-	printf("eu estou no filho %d e estou testando o numero %d\n", i, shared_num[i]);
-	(*shared_count_ptr) += prime_check(shared_num[i]); /* atualiza a variavel de contagem com o resultado da expressao que checa se eh primo*/
-	printf("o filho %d atualizou a contagem para %d\n", i, (*shared_count_ptr));
-	exit(0);
-      }
-      process_count++;
+    filho[i] = fork();
+    if (filho[i] == 0){ /* cada filho vai acessar a sua pagina de memoria correspondente */
+      /*printf("eu estou no filho %d e estou testando o numero %d\n", i, shared_num[i]);*/
+      (*shared_count_ptr) += prime_check(shared_num[i]); /* atualiza a variavel de contagem com o resultado da expressao que checa se eh primo*/
+      /*printf("o filho %d atualizou a contagem para %d\n", i, (*shared_count_ptr));*/
+      exit(0);
     }
-    /* se o programa ver que atingiu o maximo de processos em paralelo, ele espera algum terminar para criar outro */ 
-    wait(NULL);
-    --process_count;
+    ++process_count;
+    if (process_count >= N_MAX_PROCESS){/* aqui ele checa o numero de processos em paralelo */ 
+      /*printf("estou com quatro processos em paralelo, vou esperar algum terminar\n");*/
+      wait(NULL); /* se o programa ver que atingiu o maximo de processos em paralelo, ele espera algum terminar para criar outro */
+      --process_count;
+    }
   }
 
   /* nessa parte, ja enviamos todos os numeros para serem checados, entao esperaremos todos os processos filhos terminarem de checar */
