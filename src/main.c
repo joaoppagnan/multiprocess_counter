@@ -16,26 +16,18 @@
 const int tam_buffer = 100;
 
 /* definicao de uma funcao para checar se um numero eh primo */
-unsigned int prime_check(unsigned int num){
-  unsigned int primo = 0; /* a variavel sera 0 se nao for primo e 1 se for primo */
-  if (num == 0){ /* definicao do caso base 0 */
-    return primo;
+int prime_check(unsigned long long num){
+  if ((num == 0) || (num == 1)){ /* definicao dos casos base */
+    return 0;
   }
-  else if (num == 1){ /* definicao do caso base 1 */
-    return primo;
-  }
-  else {
-    for (float divisor = 2; divisor < num; ++divisor){ /* loop para testar as divisoes */
-      float quociente_flt;
-      int quociente_int;
-      quociente_flt = num/divisor;
-      quociente_int = (int)quociente_flt;
-      if (quociente_int == quociente_flt){ /* se o float e o int forem iguais, entao o resultado eh inteiro */
-	return primo; /* se ele ver que o resultado eh inteiro, ele retorna o valor 0, nao primo */
-      }
+  unsigned long long divisor;
+  for (divisor = 2; divisor <= num - 1; divisor++){
+    if (num%divisor == 0){ /* checa se o numero eh um multiplo do divisor e retorna 0 para o nao-primo*/
+      return 0;
     }
-    primo = 1; /* caso contrario ele retorna o 1, significando que o numero eh inteiro */
-    return primo;
+  }
+  if (divisor == num){ /* se o numero passou por todos os testes de divisor, entao ele eh primo*/
+    return 1;
   }
 }
 
@@ -54,15 +46,15 @@ int main(){
   shared_count_ptr = (int*) mmap(NULL, sizeof(int), protection, visibility, 0, 0);
 
   /* memoria mapeada por paginas para o processo pai enviar os numeros para os filhos */
-  unsigned int *shared_num;
-  shared_num = (unsigned int*) mmap(NULL, sizeof(unsigned int*), protection, visibility, 0, 0);
+  unsigned long long *shared_num;
+  shared_num = (unsigned long long*) mmap(NULL, sizeof(unsigned long long*), protection, visibility, 0, 0);
 
   /* instrucoes para receber uma string de entrada, dividir nos espacos e enviar cada numero para uma pagina da memoria compartilhada */
   char num_str[tam_buffer];
   fgets(num_str, tam_buffer, stdin);
   char* num_ptr = strtok(num_str, " ");
   while (num_ptr != NULL){
-    shared_num[index_mem++] = (unsigned int) atoi(num_ptr);
+    shared_num[index_mem++] = atoll(num_ptr);
     num_ptr = strtok(NULL, " ");
     num_count++;
   }
